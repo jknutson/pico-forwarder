@@ -135,10 +135,9 @@ func main() {
 		panic(err)
 	}
 
+	reader := bufio.NewReader(s)
 	log.Printf("reading from %s\n", serialPort)
 	for {
-		// TODO: try moving reader outside for loop
-		reader := bufio.NewReader(s)
 		line, err := reader.ReadString('\n')
 		if err != nil && err != io.EOF {
 			panic(err)
