@@ -121,10 +121,14 @@ func main() {
 	// topics
 	dhtHumidityTopic := fmt.Sprintf("iot/%s/humidity", mqTopic)
 	dhtTemperatureTopic := fmt.Sprintf("iot/%s/temperature", mqTopic)
+	windAngleTopic := fmt.Sprintf("iot/%s/wind_angle", mqTopic)
+	windSpeedTopic := fmt.Sprintf("iot/%s/wind_speed", mqTopic)
 
 	// setup stats/samples
 	var dhtHumiditySample Sample
 	var dhtTemperatureSample Sample
+	var windAngleSample Sample
+	var windSpeedSample Sample
 	start := time.Now()
 	sampleDuration, err := time.ParseDuration(samplePeriod)
 	if err != nil {
@@ -187,6 +191,10 @@ func main() {
 					log.Printf("Wind Angle: %s", line)
 				}
 				windAngleMatches := windAngleRe.FindAllStringSubmatch(line, -1)
+				err = windAngleSample.AddPointS(windAngleMatches[0][1])
+				if err != nil {
+					panic(err) // TODO: handle this better
+				}
 				token := c.Publish(fmt.Sprintf("%s/dht/wind_angle", mqTopic), 0, false, windAngleMatches[0][1])
 				token.Wait()
 				if token.Error() != nil {
@@ -198,6 +206,10 @@ func main() {
 					log.Printf("Wind Speed: %s", line)
 				}
 				windSpeedMatches := windSpeedRe.FindAllStringSubmatch(line, -1)
+				err = windSpeedSample.AddPointS(windSpeedMatches[0][1])
+				if err != nil {
+					panic(err) // TODO: handle this better
+				}
 				token := c.Publish(fmt.Sprintf("%s/dht/wind_speed", mqTopic), 0, false, windSpeedMatches[0][1])
 				token.Wait()
 				if token.Error() != nil {
@@ -218,7 +230,6 @@ func main() {
 
 		if time.Since(start) >= sampleDuration {
 			dhtHumidityAvgTopic := fmt.Sprintf("%s_avg", dhtHumidityTopic)
-			// TODO: bug here, the MeanS returns NaN, slice of Points is empty
 			dhtHumidityAvgPayload := dhtHumiditySample.MeanS()
 			log.Printf("publishing %s %s\n", dhtHumidityAvgTopic, dhtHumidityAvgPayload)
 			token := c.Publish(dhtHumidityAvgTopic, 0, false, dhtHumidityAvgPayload)
@@ -226,10 +237,30 @@ func main() {
 			if token.Error() != nil {
 				log.Printf("mq publish error: %s\n", token.Error())
 			}
+
 			dhtTemperatureAvgTopic := fmt.Sprintf("%s_avg", dhtTemperatureTopic)
 			dhtTemperatureAvgPayload := dhtTemperatureSample.MeanS()
 			log.Printf("publishing %s %s\n", dhtTemperatureAvgTopic, dhtTemperatureAvgPayload)
 			token = c.Publish(dhtTemperatureAvgTopic, 0, false, dhtTemperatureAvgPayload)
+			token.Wait()
+			if token.Error() != nil {
+				log.Printf("mq publish error: %s\n", token.Error())
+			}
+
+			windAngleAvgTopic := fmt.Sprintf("%s_avg", windAngleTopic)
+			// TODO: use mode here
+			windAngleAvgPayload := windAngleSample.MeanS()
+			log.Printf("publishing %s %s\n", windAngleAvgTopic, windAngleAvgPayload)
+			token = c.Publish(windAngleAvgTopic, 0, false, windAngleAvgPayload)
+			token.Wait()
+			if token.Error() != nil {
+				log.Printf("mq publish error: %s\n", token.Error())
+			}
+
+			windSpeedAvgTopic := fmt.Sprintf("%s_avg", windSpeedTopic)
+			windSpeedAvgPayload := windSpeedSample.MeanS()
+			log.Printf("publishing %s %s\n", windSpeedAvgTopic, windSpeedAvgPayload)
+			token = c.Publish(windSpeedAvgTopic, 0, false, windSpeedAvgPayload)
 			token.Wait()
 			if token.Error() != nil {
 				log.Printf("mq publish error: %s\n", token.Error())
