@@ -21,7 +21,7 @@ import (
 var (
 	//BuildVersion is passed at build: `-X main.BuildVersion=0.1.0`
 	BuildVersion                  string
-	samplePeriod                  string = "60s"
+	samplePeriod                  string = "61s"
 	serialPort                    string
 	serialPortDefault             string = "/dev/ttyACM0"
 	serialBaud                    int
@@ -247,23 +247,35 @@ func main() {
 				log.Printf("mq publish error: %s\n", token.Error())
 			}
 
-			windAngleAvgTopic := fmt.Sprintf("%s_avg", windAngleTopic)
-			// TODO: use mode here
-			windAngleAvgPayload := windAngleSample.MeanS()
-			log.Printf("publishing %s %s\n", windAngleAvgTopic, windAngleAvgPayload)
-			token = c.Publish(windAngleAvgTopic, 0, false, windAngleAvgPayload)
-			token.Wait()
-			if token.Error() != nil {
-				log.Printf("mq publish error: %s\n", token.Error())
+			if len(windAngleSample.Points) > 0 {
+				windAngleAvgTopic := fmt.Sprintf("%s_avg", windAngleTopic)
+				// TODO: use mode here
+				windAngleAvgPayload := windAngleSample.MeanS()
+				log.Printf("publishing %s %s\n", windAngleAvgTopic, windAngleAvgPayload)
+				token = c.Publish(windAngleAvgTopic, 0, false, windAngleAvgPayload)
+				token.Wait()
+				if token.Error() != nil {
+					log.Printf("mq publish error: %s\n", token.Error())
+				}
+			} else {
+				if verbose {
+					log.Printf("not publishing windAngle, no samples\n")
+				}
 			}
 
-			windSpeedAvgTopic := fmt.Sprintf("%s_avg", windSpeedTopic)
-			windSpeedAvgPayload := windSpeedSample.MeanS()
-			log.Printf("publishing %s %s\n", windSpeedAvgTopic, windSpeedAvgPayload)
-			token = c.Publish(windSpeedAvgTopic, 0, false, windSpeedAvgPayload)
-			token.Wait()
-			if token.Error() != nil {
-				log.Printf("mq publish error: %s\n", token.Error())
+			if len(windSpeedSample.Points) > 0 {
+				windSpeedAvgTopic := fmt.Sprintf("%s_avg", windSpeedTopic)
+				windSpeedAvgPayload := windSpeedSample.MeanS()
+				log.Printf("publishing %s %s\n", windSpeedAvgTopic, windSpeedAvgPayload)
+				token = c.Publish(windSpeedAvgTopic, 0, false, windSpeedAvgPayload)
+				token.Wait()
+				if token.Error() != nil {
+					log.Printf("mq publish error: %s\n", token.Error())
+				}
+			} else {
+				if verbose {
+					log.Printf("not publishing windSpeed, no samples\n")
+				}
 			}
 
 			start = time.Now()
