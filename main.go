@@ -21,15 +21,15 @@ import (
 var (
 	//BuildVersion is passed at build: `-X main.BuildVersion=0.1.0`
 	BuildVersion                  string
-	samplePeriod                  string = "10s"
+	samplePeriod                  string = "60s"
 	serialPort                    string
 	serialPortDefault             string = "/dev/ttyACM0"
 	serialBaud                    int
 	serialBaudDefault             int = 115200
 	mqBroker, mqTopic, mqClientID string
 	mqBrokerDefault               string = "tcp://localhost:1883"
-	mqTopicDefault                string = "pico-weatherstation"
-	mqClientIDDefault             string = "pico-weatherstation"
+	mqTopicDefault                string = "pico-forwarder"
+	mqClientIDDefault             string = "pico-forwarder"
 	verbose, version              bool
 )
 
@@ -64,7 +64,7 @@ func usage() {
 	Read data from Serial port and emit to MQTT
 	Options:`)
 	flag.PrintDefaults()
-	println(`For more information, see https://github.com/jknutson/pico-weatherstation-c`)
+	println(`For more information, see https://github.com/jknutson/pico-forwarder`)
 }
 
 func initFlags() {
